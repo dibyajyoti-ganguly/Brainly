@@ -5,6 +5,7 @@ import { UserModel, ContentModel, TagModel, LinkModel } from "./db";
 import { Types } from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import { string } from "zod";
 
 declare global {
   namespace Express {
@@ -70,7 +71,43 @@ app.post("/api/v1/signin", inputCheck, async (req, res) => {
   });
 });
 
-app.post("/api/v1/content", tokenDecoder, async (req, res) => {});
+app.post("/api/v1/content", tokenDecoder, async (req, res) => {
+  const userId = req.userId;
+  const { link, type, title, tags } = req.body;
+
+  if (!link || !type || !title || !userId) {
+    return res.status(403).json({ message: "Missing required fields" });
+  }
+
+  const validTypes = ["image", "video", "article", "audio"] as const;
+  if (!validTypes.includes(type)) {
+    return res.status(403).json({ message: "Invalid content type" });
+  }
+
+  const tagDocs = await Promise.all(
+    tags.map(async (tagtitle: string) => {
+      let tag = await TagModel.findOne({ title: tagtitle });
+      tag ??= await TagModel.create({ title: tagtitle });
+      return tag;
+    })
+  );
+
+  // Extract only the ObjectId of the tag documents
+  const tagIds = tagDocs.map((tag) => tag._id);
+
+  try {
+    await ContentModel.create({
+      link: link,
+      type: type,
+      title: title,
+      tags: tagIds,
+      userId: userId,
+    });
+    res.status(200).json("Content stored in db");
+  } catch (err) {
+    return res.status(403).json(err);
+  }
+});
 
 app.get("/api/v1/content", (req, res) => {});
 
