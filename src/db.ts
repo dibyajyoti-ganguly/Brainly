@@ -19,6 +19,7 @@ interface IContent extends Document {
   title: string;
   tags?: Types.ObjectId[];
   userId: Types.ObjectId;
+  shareId: string;
 }
 
 interface ITags extends Document {
@@ -43,6 +44,7 @@ const ContentSchema = new Schema<IContent>({
   title: { type: String, required: true },
   tags: [{ type: Schema.Types.ObjectId, ref: "Tag" }],
   userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  shareId: { type: String, unique: true, sparse: true }, // optional field in content schema
 });
 
 const TagSchema = new Schema<ITags>({

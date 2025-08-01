@@ -5,6 +5,7 @@ import { UserModel, ContentModel, TagModel, LinkModel } from "./db";
 import { Types } from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 
 declare global {
   namespace Express {
@@ -108,7 +109,18 @@ app.post("/api/v1/content", tokenDecoder, async (req, res) => {
   }
 });
 
-app.get("/api/v1/content", (req, res) => {});
+app.get("/api/v1/content", tokenDecoder, async (req, res) => {
+  const userId = req.userId;
+
+  try {
+    const contents = await ContentModel.find({
+      userId: userId,
+    }).populate("userId", "username");
+    res.status(200).json(contents);
+  } catch (e) {
+    return res.status(403).json(e);
+  }
+});
 
 app.delete("/api/v1/content", tokenDecoder, async (req, res) => {
   const userId = req.userId;
@@ -128,8 +140,42 @@ app.delete("/api/v1/content", tokenDecoder, async (req, res) => {
   res.status(200).json("Document deleted successfully");
 });
 
-app.post("/api/v1/brain/share", (req, res) => {});
+app.post("/api/v1/brain/share", tokenDecoder, async (req, res) => {
+  const { contentName } = req.body;
 
-app.get("/api/v1/brain/:shareLink", (req, res) => {});
+  const content = await ContentModel.findOne({
+    title: contentName,
+    userId: req.userId,
+  });
+
+  if (!content)
+    return res.status(403).json("Content not found or unauthorized");
+
+  if (!content.shareId) {
+    const shareId = crypto.randomBytes(12).toString("hex"); // 24-char random token
+    content.shareId = shareId;
+    await content.save();
+  }
+
+  const publicLink = `${req.protocol}://${req.get("host")}/api/v1/brain/${
+    content.shareId
+  }`;
+
+  res.status(200).json({
+    link: publicLink,
+  });
+});
+
+app.get("/api/v1/brain/:shareId", tokenDecoder, async (req, res) => {
+  const { shareId } = req.params;
+
+  const content = await ContentModel.findOne({
+    shareId: shareId,
+  });
+
+  if (!content) return res.status(403).json("Invalid link");
+
+  res.status(200).json(content);
+});
 
 app.listen(3000);
