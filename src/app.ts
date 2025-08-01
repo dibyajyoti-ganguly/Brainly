@@ -5,7 +5,6 @@ import { UserModel, ContentModel, TagModel, LinkModel } from "./db";
 import { Types } from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import { string } from "zod";
 
 declare global {
   namespace Express {
@@ -111,7 +110,23 @@ app.post("/api/v1/content", tokenDecoder, async (req, res) => {
 
 app.get("/api/v1/content", (req, res) => {});
 
-app.delete("/api/v1/content", (req, res) => {});
+app.delete("/api/v1/content", tokenDecoder, async (req, res) => {
+  const userId = req.userId;
+  const link = req.body.link;
+  const title = req.body.title;
+
+  try {
+    await ContentModel.deleteOne({
+      link: link,
+      title: title,
+      userId: userId,
+    });
+  } catch (e) {
+    return res.status(403).json(e);
+  }
+
+  res.status(200).json("Document deleted successfully");
+});
 
 app.post("/api/v1/brain/share", (req, res) => {});
 
