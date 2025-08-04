@@ -6,6 +6,7 @@ import { Types } from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
+import cors from "cors";
 
 declare global {
   namespace Express {
@@ -19,6 +20,8 @@ dotenv.config();
 
 const app = express();
 app.use(express.json());
+
+app.use(cors());
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
