@@ -116,9 +116,10 @@ app.get("/api/v1/content", tokenDecoder, async (req, res) => {
   const userId = req.userId;
 
   try {
-    const contents = await ContentModel.find({
-      userId: userId,
-    }).populate("userId", "username");
+    const contents = await ContentModel.find({ userId })
+      .populate("tags")
+      .populate("userId", "username");
+
     res.status(200).json(contents);
   } catch (e) {
     return res.status(403).json(e);

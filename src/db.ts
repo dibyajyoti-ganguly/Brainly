@@ -42,7 +42,7 @@ const ContentSchema = new Schema<IContent>({
   link: { type: String, required: true },
   type: { type: String, enum: contentTypes, required: true },
   title: { type: String, required: true },
-  tags: [{ type: Schema.Types.ObjectId, ref: "Tag" }],
+  tags: [{ type: Schema.Types.ObjectId, ref: "Tags" }],
   userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
   shareId: { type: String, unique: true, sparse: true }, // optional field in content schema
 });
